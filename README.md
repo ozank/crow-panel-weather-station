@@ -4,6 +4,26 @@
 [![PlatformIO](https://img.shields.io/badge/built%20with-PlatformIO-orange.svg)](https://platformio.org)
 ![Platform](https://img.shields.io/badge/MCU-ESP32--S3-green.svg)
 
+![The weather station in its plywood case on a fridge door](case/out/render_kitchen.png)
+
+*Render of the finished weather station on a fridge door.*
+
+## The idea
+
+This is a small weather display for the place you pass every morning. Stick it on the fridge or by the
+front door, and one glance before you head out tells you whether you need a coat, an umbrella or
+sunglasses. It shows today's weather, how the next few hours will go and the next couple of days,
+all in large, easy-to-read type.
+
+It's made to be forgotten about. There are no cables, no app, no account and nothing to charge
+every week: one battery lasts about a year, and the forecast updates itself in the background. The
+e-paper screen looks like printed paper, so it doesn't glow at night or light up a dark kitchen. The
+wooden case holds onto any steel surface with hidden magnets, so there's nothing to drill or screw.
+It suits a family kitchen, a holiday home, a boat or a workshop: anywhere with Wi-Fi where the weather matters and a
+phone isn't always to hand.
+
+## What it is
+
 Firmware that turns the **Elecrow CrowPanel ESP32-S3 2.13" e-paper** board into a battery-powered weather
 station. It uses the board's built-in Wi-Fi to download a forecast from [Open-Meteo](https://open-meteo.com)
 (free, no API key), draws it on the e-paper panel and spends almost all of its time in deep sleep.
