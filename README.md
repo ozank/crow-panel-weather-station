@@ -44,8 +44,6 @@ No extra electronics are needed: just the board, a battery and a USB-C cable. Th
   when nothing has changed
 - **Works offline:** keeps the screen up to date from its cached forecast for about a day if Wi-Fi drops
 - **Refresh on demand:** press **MENU** or push the **dial** to download a new forecast right away
-- **Supports both panel controllers** Elecrow has shipped on this board (SSD1680 and JD79661), detected
-  automatically
 
 ---
 
@@ -69,7 +67,7 @@ Any single-cell 3.7 V Li-ion or LiPo battery works; battery life scales with its
 | Part | Details |
 |---|---|
 | MCU | ESP32-S3, 240 MHz, Wi-Fi + Bluetooth LE, 8 MB flash, 8 MB PSRAM |
-| Display | 2.13" black/white e-paper, 122 × 250 px, SPI; controller SSD1680 or JD79661 depending on batch |
+| Display | 2.13" black/white e-paper, 122 × 250 px, SPI; SSD1680 controller |
 | USB | USB-C through a CH340K USB-serial bridge |
 | Power | 4054-type Li-ion charger (~330 mA), RY3420 3.3 V buck regulator, 2-pin SH 1.0 battery socket |
 | Controls | MENU and EXIT buttons, 3-way dial (up / down / press), RESET and BOOT buttons |
@@ -187,7 +185,7 @@ something like:
 ```
 [main] wake cause 0, fetch yes
 [wx] 23.6 C code 2, 48 h / 4 days cached
-[epd] controller: JD79661
+[epd] controller: SSD1680 (GxEPD2)
 [main] awake 3120 ms
 [main] sleeping 1223 s
 ```
@@ -206,9 +204,8 @@ whenever USB-C is connected.
 |---|---|
 | Screen shows **No Wi-Fi** | Check the network name and password in `secrets.h`, and that the network is 2.4 GHz. It retries by itself; press MENU to retry now. |
 | Screen shows **No data** | Wi-Fi works but the forecast download failed. Check that the network allows `api.open-meteo.com`. |
-| Nothing appears on the panel | Check the serial log. A `BUSY timeout` or a wrong controller name means detection failed: set `-DPANEL_DRIVER=1` (SSD1680) or `=2` (JD79661) in `platformio.ini`. |
+| Nothing appears on the panel | Pass `115200` as the first argument of `g_display.init()` in `src/epd.cpp` to log the BUSY timing, and try `examples/hello_epd`, a minimal screen test. |
 | Image is upside down | Set `ROTATE_180 1` in `include/config.h`. |
-| Refreshes hang or look corrupted | Change the two `waitIdleSleeping()` calls in `src/epd.cpp` to `waitIdle()` and report the issue. |
 | Upload fails, port not found | Install the CH340 driver and use a USB-C cable that carries data. |
 
 ---
@@ -228,7 +225,7 @@ whenever USB-C is connected.
         same picture as last time? ──yes─────────────────────────────────────┤
                   │ no                                                        │
                   ▼                                                           │
-      panel refresh (CPU in light sleep) ─► panel off ─► schedule next wake ─┘
+      panel refresh ─────────────────────► panel off ─► schedule next wake ─┘
 ```
 
 - **Forecast cache:** each download holds 48 hourly and 4 daily entries. These are kept in RTC memory,
@@ -238,9 +235,8 @@ whenever USB-C is connected.
 - **Refresh skipping:** the frame is hashed, and if it matches what's on the panel, the panel isn't touched.
 - **Retry back-off:** a failed download retries after 5, 10, 20 and 40 minutes, then every hour.
 - **Fast reconnect:** the access point's channel and BSSID are remembered, which skips the Wi-Fi scan.
-- **Panel driver:** a small driver for both controllers. It detects which one is fitted from the idle level
-  of the BUSY pin after reset, and keeps the previous frame, which the JD79661 needs to compute its
-  waveform.
+- **Panel driver:** [GxEPD2](https://github.com/ZinggJM/GxEPD2) with the GDEY0213B74 (SSD1680) panel
+  class. The screen is drawn into an Adafruit GFX canvas, then sent to the panel as one full refresh.
 
 ### Configuration
 
@@ -256,9 +252,6 @@ All options are in `include/config.h`:
 | `WIFI_TIMEOUT_MS`, `HTTP_TIMEOUT_MS` | 15000, 10000 | Network timeouts |
 | `ROTATE_180` | 0 | Flip the image |
 
-The panel controller can be forced in `platformio.ini` with `-DPANEL_DRIVER=1` (SSD1680) or
-`-DPANEL_DRIVER=2` (JD79661).
-
 ### Project layout
 
 ```
@@ -269,8 +262,10 @@ src/
   main.cpp            wake cycle: download if due, draw, sleep
   weather.cpp/.h      Open-Meteo download, forecast cache, screen data
   ui.cpp/.h           screen layout and weather icons (Adafruit GFX)
-  epd.cpp/.h          SSD1680 / JD79661 panel driver
+  epd.cpp/.h          panel output through GxEPD2
   clock.cpp/.h        wall clock kept by the RTC
+examples/
+  hello_epd/          minimal screen test (frame and text)
 case/
   case.py             parametric laser-cut case generator
   out/                generated SVG / DXF layers and preview
@@ -304,9 +299,6 @@ Issues and pull requests are welcome. Ideas that would fit well:
 
 ## Credits
 
-- Panel init sequences based on Elecrow's
-  [example code](https://github.com/Elecrow-RD/CrowPanel-ESP32-2.13-E-paper-HMI-Display-with-122-250)
-  (SSD1680) and [nacree/ESPHome-CrowPanel-ESP32-2.13](https://github.com/nacree/ESPHome-CrowPanel-ESP32-2.13)
-  (JD79661)
+- E-paper driver: [GxEPD2](https://github.com/ZinggJM/GxEPD2) by Jean-Marc Zingg
 - Weather data by [Open-Meteo.com](https://open-meteo.com), licensed
   [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
