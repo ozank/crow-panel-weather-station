@@ -56,6 +56,7 @@ bool fetchForecast(Forecast &out, uint32_t &serverTime) {
 
   HTTPClient http;
   http.setTimeout(HTTP_TIMEOUT_MS);
+  http.useHTTP10(true);  // no chunked encoding, so the JSON can be parsed straight from the stream
   if (!http.begin(url)) return false;
   const char *headerKeys[] = {"Date"};
   http.collectHeaders(headerKeys, 1);
